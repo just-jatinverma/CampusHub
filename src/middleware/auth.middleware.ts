@@ -16,7 +16,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 interface IDecodedToken extends JwtPayload {
-  userId: number; // Prisma usually uses "id" (Int) instead of "_id"
+  userId: number; 
 }
 
 export const verifyJWT = asyncHandler(
