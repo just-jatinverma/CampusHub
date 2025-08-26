@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  FACULTY
+  STUDENT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+model User {
+  id                String         @id @default(cuid())
+  name              String
+  email             String         @unique
+  password          String
+  Role              Role
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  // Relations
+  Event             Event[]        @relation("EventCreator")
+  Announcement      Announcement[] @relation("AnnouncementAuthor")
+  Notification      Notification[]
+  Course            Course[]       @relation("CourseCreator")
+  Attendance        Attendance[]   @relation("StudentAttendance")
+  markedAttendances Attendance[]   @relation("AttendanceMarker")
+  Result            Result[]       @relation("StudentResults")
+  ResultPublisher   Result[]       @relation("ResultPublisher")
+  Enrollment        Enrollment[]
+  Material          Material[]     @relation("MaterialUploader")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  date        DateTime
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation("AnnouncementAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  createdAt   DateTime     @default(now())
+  createdBy   User         @relation("CourseCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String
+  Attendance  Attendance[]
+  Result      Result[]
+  Enrollment  Enrollment[]
+  Material    Material[]
+}
+
+model Attendance {
+  id         String           @id @default(cuid())
+  date       DateTime         @default(now())
+  status     AttendanceStatus
+  createdAt  DateTime         @default(now())
+  student    User             @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+  studentId  String
+  course     Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId   String
+  markedBy   User             @relation("AttendanceMarker", fields: [markedById], references: [id], onDelete: Cascade)
+  markedById String
+}
+
+model Result {
+  id            String   @id @default(cuid())
+  grade         String
+  createdAt     DateTime @default(now())
+  student       User     @relation("StudentResults", fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+  course        Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId      String
+  publishedBy   User     @relation("ResultPublisher", fields: [publishedById], references: [id], onDelete: Cascade)
+  publishedById String
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  enrolledAt DateTime @default(now())
+  student    User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId  String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId   String
+
+  @@unique([studentId, courseId])
+}
+
+model Material {
+  id           String   @id @default(cuid())
+  title        String
+  fileUrl      String
+  createdAt    DateTime @default(now())
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId     String
+  uploadedBy   User     @relation("MaterialUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  uploadedById String
+}
