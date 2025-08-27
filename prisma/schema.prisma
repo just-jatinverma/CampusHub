@@ -31,7 +31,8 @@ model User {
   name              String
   email             String         @unique
   password          String
-  Role              Role
+  role              Role
+  refreshToken      String
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   // Relations

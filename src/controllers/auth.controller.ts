@@ -2,35 +2,138 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { ApiError } from '../utils/apiError';
 import { ApiResponse } from '../utils/apiResponse';
 import prisma from '../config/db';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { constants } from '../config/constants';
 
 const register = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. Get user details from request body (name, email, password, role).
-  // 2. Validate input: check if user with the same email already exists.
-  // 3. Hash the user's password.
-  // 4. Create a new user in the database using Prisma Client.
-  // 5. Generate JWT access and refresh tokens.
-  // 6. Set the refresh token in an HTTPOnly cookie.
-  // 7. Return the access token and user data in the response.
+  const { name, email, password, role } = req.body;
+
+  if (!name || !email || !password || !role) {
+    throw new ApiError(400, 'all fields are required');
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingUser) {
+    throw new ApiError(400, 'user already exists');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      refreshToken: '',
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, user, 'success'));
 });
 
 const login = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. Get email and password from the request body.
-  // 2. Find the user by email in the database.
-  // 3. If user is not found, throw a 401 Unauthorized error.
-  // 4. Compare the provided password with the stored hashed password.
-  // 5. If passwords do not match, throw a 401 Unauthorized error.
-  // 6. Generate new JWT access and refresh tokens.
-  // 7. Set the refresh token in an HTTPOnly cookie.
-  // 8. Return the access token and user data in the response.
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new ApiError(400, 'both fields are required');
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    throw new ApiError(400, "user don't exist");
+  }
+
+  const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, 'incorrect password');
+  }
+
+  const accessToken = jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    constants.accessTokenSecret as string,
+    { expiresIn: '15m' }
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      id: user.id,
+    },
+    constants.refreshTokenSecret as string,
+    { expiresIn: '1d' }
+  );
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { refreshToken },
+  });
+
+  const loggedInUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+
+  const options = {
+    httpOnly: true,
+    secure: false,
+  };
+
+  return res
+    .status(200)
+    .cookie('accessToken', accessToken, options)
+    .cookie('refreshToken', refreshToken, options)
+    .json(new ApiResponse(200, { user: loggedInUser, accessToken }, 'success'));
 });
 
-const getCurrentUser = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. The `auth.middleware.ts` should have already populated `req.user`.
-  // 2. Get the user object from the request.
-  // 3. Return the user's data (excluding sensitive fields like password).
+const getCurrentUser = asyncHandler(async (req: any, res) => {
+  return res.status(200).json(new ApiResponse(200, req.user, 'success'));
 });
 
-export { register, login, getCurrentUser };
+const logoutUser = asyncHandler(async (req: any, res) => {
+  if (!req.user?._id) {
+    throw new ApiError(200, 'user not loggedIn');
+  }
+
+  const userId = req.user._id;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { refreshToken: '' },
+  });
+
+  const options = {
+    httpOnly: true,
+    secure: false,
+  };
+
+  return res
+    .status(200)
+    .clearCookie('accessToken', options)
+    .clearCookie('refreshToken', options)
+    .json(new ApiResponse(200, {}, 'success'));
+});
+
+export { register, login, getCurrentUser, logoutUser };
