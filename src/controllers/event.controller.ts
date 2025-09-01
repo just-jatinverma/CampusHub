@@ -5,20 +5,22 @@ import prisma from '../config/db';
 
 const createEvent = asyncHandler(async (req, res) => {
   // TODO:
-  // 1. Get event details from request body (title, description, date, location, etc.).
-  // 2. Get the author ID from the authenticated user (req.user).
-  // 3. Validate the input.
-  // 4. Create a new event in the database.
-  // 5. generate notification
-  // 6. Return the newly created event.
+  // 1. Get title, description, and date from request body
+  // 2. Validate required fields
+  // 3. Get userId from authenticated request (req.user.id)
+  // 4. Create event with createdById set to current user
+  // 5. Return success response with created event
 });
 
 const getEvents = asyncHandler(async (req, res) => {
   // TODO:
-  // 1. Implement pagination (page, limit).
-  // 2. Allow filtering by date range or other criteria.
-  // 3. Fetch events from the database.
-  // 4. Return a paginated list of events.
+  // 1. Get pagination parameters from query (page, limit)
+  // 2. Set default values if not provided
+  // 3. Fetch events with included createdBy relation
+  // 4. Optionally filter by date range
+  // 5. Order by date descending
+  // 6. Get total count for pagination metadata
+  // 7. Return paginated list of events
 });
 
 export { createEvent, getEvents };

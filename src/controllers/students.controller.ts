@@ -5,21 +5,21 @@ import prisma from '../config/db';
 
 const getStudentAttendance = asyncHandler(async (req, res) => {
   // TODO:
-  // 1. Get the student ID from request parameters.
-  // 2. The user making the request should be the student themselves or an admin/teacher.
-  //    - Implement access control logic.
-  // 3. Get course ID from request query to filter attendance by a specific course.
-  // 4. Fetch all attendance records for the student.
-  // 5. Return the attendance records.
+  // 1. Get studentId from request params
+  // 2. Verify student exists
+  // 3. Check if current user has permission to view this data
+  // 4. Fetch attendance records for specified student with included course relation
+  // 5. Optionally filter by course or date range
+  // 6. Return attendance list
 });
 
 const getStudentEnrollments = asyncHandler(async (req, res) => {
   // TODO:
-  // 1. Get the student ID from request parameters.
-  // 2. The user making the request should be the student themselves or an admin/teacher.
-  //    - Implement access control logic.
-  // 3. Fetch all courses the student is enrolled in.
-  // 4. Return the list of enrolled courses.
+  // 1. Get studentId from request params
+  // 2. Verify student exists
+  // 3. Check if current user has permission to view this data
+  // 4. Fetch enrollments for specified student with included course relation
+  // 5. Return list of enrollments
 });
 
 export { getStudentAttendance, getStudentEnrollments };
