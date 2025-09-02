@@ -4,23 +4,36 @@ import { ApiResponse } from '../utils/apiResponse';
 import prisma from '../config/db';
 
 const createEvent = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. Get title, description, and date from request body
-  // 2. Validate required fields
-  // 3. Get userId from authenticated request (req.user.id)
-  // 4. Create event with createdById set to current user
-  // 5. Return success response with created event
+  // TODO: Validate request body
+  // - Validate required fields: title, description, date
+  // - Ensure date is in future
+  // - Validate date format
+  // TODO: Get authenticated user
+  // - Get user ID from request (set by verifyJWT middleware)
+  // - Verify faculty/admin role (handled by middleware)
+  // TODO: Create event
+  // - Create new event with Prisma
+  // - Set createdById to authenticated user
+  // TODO: Create notifications
+  // - Create notifications for all users about new event
+  // TODO: Send response
+  // - Return success response with created event data
 });
 
 const getEvents = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. Get pagination parameters from query (page, limit)
-  // 2. Set default values if not provided
-  // 3. Fetch events with included createdBy relation
-  // 4. Optionally filter by date range
-  // 5. Order by date descending
-  // 6. Get total count for pagination metadata
-  // 7. Return paginated list of events
+  // TODO: Handle query parameters
+  // - Parse pagination parameters (page, limit)
+  // - Parse date range filters
+  // TODO: Build query filters
+  // - Create date range filter if provided
+  // - Filter out past events if requested
+  // TODO: Fetch events
+  // - Query database with pagination and filters
+  // - Include creator information
+  // - Sort by date
+  // TODO: Send response
+  // - Return success response with events array
+  // - Include pagination metadata
 });
 
 export { createEvent, getEvents };

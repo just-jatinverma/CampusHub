@@ -4,23 +4,39 @@ import { ApiResponse } from '../utils/apiResponse';
 import prisma from '../config/db';
 
 const getAllUsers = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. Get pagination parameters from query (page, limit)
-  // 2. Set default values (page=1, limit=10) if not provided
-  // 3. Fetch users from database with pagination using skip/take
-  // 4. Use select to exclude password and refreshToken fields
-  // 5. Include count of total users for pagination metadata
-  // 6. Return paginated response with user list and metadata
+  // TODO: Handle query parameters
+  // - Parse pagination parameters (page, limit)
+  // - Parse role filter if provided
+  // - Parse search query (name/email)
+  // TODO: Build query filters
+  // - Create filter object based on role and search parameters
+  // TODO: Fetch users
+  // - Query database with pagination and filters
+  // - Exclude sensitive information (password, refreshToken)
+  // - Include user statistics (courses enrolled/created)
+  // TODO: Send response
+  // - Return success response with users array
+  // - Include pagination metadata
+  // - Include role-based statistics
 });
 
 const updateUserRole = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. Get userId from request params
-  // 2. Get new role from request body
-  // 3. Validate role value (must be ADMIN, FACULTY, or STUDENT)
-  // 4. Check if user exists
-  // 5. Update user role in database using prisma.user.update
-  // 6. Return updated user data (excluding sensitive fields)
+  // TODO: Validate request
+  // - Validate user ID from params
+  // - Validate role from body (must be valid Role enum)
+  // TODO: Find target user
+  // - Query database for user by ID
+  // - Throw error if user not found
+  // TODO: Validate role change
+  // - Prevent changing own role (admin can't change their own role)
+  // - Ensure there's at least one admin remaining
+  // TODO: Update user role
+  // - Update user record with new role
+  // TODO: Create notification
+  // - Notify user about role change
+  // TODO: Send response
+  // - Return success response with updated user data
+  // - Exclude sensitive information
 });
 
 export { getAllUsers, updateUserRole };

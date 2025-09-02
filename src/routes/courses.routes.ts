@@ -9,18 +9,26 @@ import {
   markAttendance,
   getAttendance,
   enrollInCourse,
-  getEnrollments
+  getEnrollments,
 } from '../controllers/courses.controller';
+import { upload } from '../middleware/multer.middleware';
 
 const router = Router();
 
-router.get('/', verifyJWT, getCourses);
-router.post('/', verifyJWT, checkRole(['admin']), createCourse);
-router.get('/:courseId/materials', verifyJWT, getCourseMaterials);
-router.post('/:courseId/materials', verifyJWT, checkRole(['faculty']), uploadCourseMaterial);
-router.post('/:courseId/attendance', verifyJWT, checkRole(['faculty']), markAttendance);
-router.get('/:courseId/attendance', verifyJWT, checkRole(['faculty', 'admin']), getAttendance);
-router.post('/:courseId/enroll', verifyJWT, checkRole(['student']), enrollInCourse);
-router.get('/:courseId/enrollments', verifyJWT, checkRole(['faculty', 'admin']), getEnrollments);
+router.use(verifyJWT);
+
+router.get('/', getCourses);
+router.post('/', checkRole(['admin']), createCourse);
+router.get('/:courseId/materials', getCourseMaterials);
+router.post(
+  '/:courseId/materials',
+  upload.single('courseMaterial'),
+  checkRole(['faculty']),
+  uploadCourseMaterial
+);
+router.post('/:courseId/attendance', checkRole(['faculty']), markAttendance);
+router.get('/:courseId/attendance', checkRole(['faculty', 'admin']), getAttendance);
+router.post('/:courseId/enroll', checkRole(['student']), enrollInCourse);
+router.get('/:courseId/enrollments', checkRole(['faculty', 'admin']), getEnrollments);
 
 export default router;

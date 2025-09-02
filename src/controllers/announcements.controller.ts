@@ -4,23 +4,32 @@ import { ApiResponse } from '../utils/apiResponse';
 import prisma from '../config/db';
 
 const createAnnouncement = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. Get title and body from request body
-  // 2. Validate required fields
-  // 3. Get userId from authenticated request (req.user.id)
-  // 4. Create announcement in database with createdById set to current user
-  // 5. Return success response with created announcement
+  // TODO: Validate request body
+  // - Validate required fields: title, body
+  // - Ensure proper length and format
+  // TODO: Get authenticated user info
+  // - Get user ID from request (set by verifyJWT middleware)
+  // - Verify user has proper role (faculty/admin - handled by middleware)
+  // TODO: Create announcement
+  // - Use Prisma to create new announcement
+  // - Include createdById from authenticated user
+  // TODO: Create notifications for relevant users
+  // - Create notifications for all users about new announcement
+  // TODO: Send response
+  // - Return success response with created announcement data
 });
 
 const getAnnouncements = asyncHandler(async (req, res) => {
-  // TODO:
-  // 1. Get pagination parameters from query (page, limit)
-  // 2. Set default values (page=1, limit=10) if not provided
-  // 3. Calculate offset for database query
-  // 4. Fetch announcements with included createdBy relation (name, role only)
-  // 5. Order by createdAt descending
-  // 6. Get total count for pagination metadata
-  // 7. Return paginated response with announcements and metadata
+  // TODO: Handle query parameters
+  // - Parse pagination parameters (page, limit)
+  // - Parse any filter parameters
+  // TODO: Fetch announcements
+  // - Query database for announcements with pagination
+  // - Sort by createdAt in descending order
+  // - Include creator information (name only)
+  // TODO: Send response
+  // - Return success response with announcements array
+  // - Include pagination metadata
 });
 
 export { createAnnouncement, getAnnouncements };
