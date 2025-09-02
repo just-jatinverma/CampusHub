@@ -43,7 +43,7 @@ const createCourse = asyncHandler(async (req: any, res) => {
   const courseName = name.trim();
 
   const existingCourse = await prisma.course.findFirst({
-    where: { name: courseName },
+    where: { name: { equals: courseName, mode: 'insensitive' } },
   });
 
   if (existingCourse) {
@@ -141,7 +141,7 @@ const uploadCourseMaterial = asyncHandler(async (req: any, res) => {
   // Notify enrolled students about new material
   const enrollments = await prisma.enrollment.findMany({
     where: {
-      courseId: courseId,
+      id: courseId,
     },
     select: {
       studentId: true,
@@ -163,7 +163,7 @@ const uploadCourseMaterial = asyncHandler(async (req: any, res) => {
   return res.status(201).json(new ApiResponse(201, material, 'Material uploaded successfully'));
 });
 
-const markAttendance = asyncHandler(async (req, res) => {
+const markAttendance = asyncHandler(async (req: any, res) => {
   // TODO: Validate request body
   // - Validate required fields: studentId, status (PRESENT/ABSENT/LATE)
   // - Validate courseId from params
@@ -177,6 +177,65 @@ const markAttendance = asyncHandler(async (req, res) => {
   // - Include course, student, and marker (faculty) information
   // TODO: Send response
   // - Return success response with attendance record
+  const userId = req.user.id;
+  const { courseId } = req.params;
+  const { studentId, status } = req.body;
+
+  if (!courseId || !studentId || !status) {
+    throw new ApiError(400, 'all fields are required');
+  }
+
+  if (!['PRESENT', 'ABSENT', 'LATE'].includes(status)) {
+    throw new ApiError(400, 'Invalid attendance status');
+  }
+
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+
+  if (!course) {
+    throw new ApiError(400, 'course not found');
+  }
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: {
+      studentId_courseId: {
+        studentId,
+        courseId,
+      },
+    },
+  });
+
+  if (!enrollment) {
+    throw new ApiError(400, 'student not enrolled in course');
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const existingAttendance = await prisma.attendance.findFirst({
+    where: {
+      studentId,
+      courseId,
+      date: {
+        gte: today,
+        lt: new Date(today.getTime() + 24 * 60 * 60 * 1000), // end of today
+      },
+    },
+  });
+
+  if (existingAttendance) {
+    throw new ApiError(400, 'Attendance already marked for today');
+  }
+
+  const attendance = await prisma.attendance.create({
+    data: {
+      status,
+      studentId,
+      courseId,
+      markedById: userId,
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, attendance, 'success'));
 });
 
 const getAttendance = asyncHandler(async (req, res) => {
@@ -203,22 +262,50 @@ const getAttendance = asyncHandler(async (req, res) => {
   // - Include pagination metadata
 });
 
-const enrollInCourse = asyncHandler(async (req, res) => {
-  // TODO: Validate course ID
-  // - Verify course exists
-  // - Get courseId from params
-  // TODO: Get authenticated student
-  // - Get student ID from request (set by verifyJWT middleware)
-  // - Verify student role (handled by middleware)
-  // TODO: Check existing enrollment
-  // - Verify student isn't already enrolled
-  // TODO: Create enrollment
-  // - Create new enrollment record with Prisma
-  // - Link course and student
-  // TODO: Create notification
-  // - Create notification for course creator about new enrollment
-  // TODO: Send response
-  // - Return success response with enrollment details
+const enrollInCourse = asyncHandler(async (req: any, res) => {
+  const { courseId } = req.params;
+
+  // Validate course exists
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+  if (!course) {
+    throw new ApiError(404, 'Course does not exist');
+  }
+
+  // Get authenticated student
+  const studentId = req.user.id;
+
+  // Check existing enrollment
+  const alreadyEnrolled = await prisma.enrollment.findUnique({
+    where: {
+      studentId_courseId: {
+        studentId,
+        courseId,
+      },
+    },
+  });
+
+  if (alreadyEnrolled) {
+    throw new ApiError(409, 'Already enrolled in this course');
+  }
+
+  // Create enrollment
+  const enroll = await prisma.enrollment.create({
+    data: {
+      studentId,
+      courseId,
+    },
+  });
+
+  // Notify the course creator (faculty)
+  await prisma.notification.create({
+    data: {
+      userId: course.createdById,
+      message: `New enrollment for the course "${course.name}".`,
+      type: 'NEW_ENROLLMENT',
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, enroll, 'Enrollment successful'));
 });
 
 const getEnrollments = asyncHandler(async (req, res) => {
