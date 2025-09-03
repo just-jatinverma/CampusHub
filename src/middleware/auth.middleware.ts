@@ -7,16 +7,16 @@ import { Request, Response, NextFunction } from 'express';
 
 interface AuthenticatedRequest extends Request {
   user?: {
-    id: number;
+    id: string;
     name: string;
     email: string;
-    role:string;
+    role: string;
     createdAt: Date;
     updatedAt: Date;
   };
 }
 interface IDecodedToken extends JwtPayload {
-  userId: number; 
+  userId: string;
 }
 
 export const verifyJWT = asyncHandler(
@@ -39,7 +39,7 @@ export const verifyJWT = asyncHandler(
           id: true,
           name: true,
           email: true,
-          role:true,
+          role: true,
           createdAt: true,
           updatedAt: true,
         },

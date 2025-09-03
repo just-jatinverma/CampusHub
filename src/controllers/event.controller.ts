@@ -3,37 +3,42 @@ import { ApiError } from '../utils/apiError';
 import { ApiResponse } from '../utils/apiResponse';
 import prisma from '../config/db';
 
-const createEvent = asyncHandler(async (req, res) => {
-  // TODO: Validate request body
-  // - Validate required fields: title, description, date
-  // - Ensure date is in future
-  // - Validate date format
-  // TODO: Get authenticated user
-  // - Get user ID from request (set by verifyJWT middleware)
-  // - Verify faculty/admin role (handled by middleware)
-  // TODO: Create event
-  // - Create new event with Prisma
-  // - Set createdById to authenticated user
-  // TODO: Create notifications
-  // - Create notifications for all users about new event
-  // TODO: Send response
-  // - Return success response with created event data
+const createEvent = asyncHandler(async (req: any, res) => {
+  const { title, description, date } = req.body;
+
+  if (!title?.trim() || !description?.trim() || !date) {
+    throw new ApiError(400, 'all fields are required');
+  }
+
+  const userId = req.user.id;
+
+  const event = await prisma.event.create({
+    data: {
+      title: title.trim(),
+      description: description.trim(),
+      date: new Date(date),
+      createdById: userId,
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, event, 'success'));
 });
 
 const getEvents = asyncHandler(async (req, res) => {
-  // TODO: Handle query parameters
-  // - Parse pagination parameters (page, limit)
-  // - Parse date range filters
-  // TODO: Build query filters
-  // - Create date range filter if provided
-  // - Filter out past events if requested
-  // TODO: Fetch events
-  // - Query database with pagination and filters
-  // - Include creator information
-  // - Sort by date
-  // TODO: Send response
-  // - Return success response with events array
-  // - Include pagination metadata
+  const events = await prisma.event.findMany({
+    select: {
+      title: true,
+      description: true,
+      date: true,
+      createdBy: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, events, 'success'));
 });
 
 export { createEvent, getEvents };

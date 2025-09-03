@@ -4,39 +4,48 @@ import { ApiResponse } from '../utils/apiResponse';
 import prisma from '../config/db';
 
 const getAllUsers = asyncHandler(async (req, res) => {
-  // TODO: Handle query parameters
-  // - Parse pagination parameters (page, limit)
-  // - Parse role filter if provided
-  // - Parse search query (name/email)
-  // TODO: Build query filters
-  // - Create filter object based on role and search parameters
-  // TODO: Fetch users
-  // - Query database with pagination and filters
-  // - Exclude sensitive information (password, refreshToken)
-  // - Include user statistics (courses enrolled/created)
-  // TODO: Send response
-  // - Return success response with users array
-  // - Include pagination metadata
-  // - Include role-based statistics
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, users, 'success'));
 });
 
 const updateUserRole = asyncHandler(async (req, res) => {
-  // TODO: Validate request
-  // - Validate user ID from params
-  // - Validate role from body (must be valid Role enum)
-  // TODO: Find target user
-  // - Query database for user by ID
-  // - Throw error if user not found
-  // TODO: Validate role change
-  // - Prevent changing own role (admin can't change their own role)
-  // - Ensure there's at least one admin remaining
-  // TODO: Update user role
-  // - Update user record with new role
-  // TODO: Create notification
-  // - Notify user about role change
-  // TODO: Send response
-  // - Return success response with updated user data
-  // - Exclude sensitive information
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (!id || !role) {
+    throw new ApiError(400, 'both fields are required');
+  }
+
+  if (!['ADMIN', 'FACULTY', 'STUDENT'].includes(role)) {
+    throw new ApiError(400, 'Invalid role');
+  }
+
+  const user = await prisma.user.findUnique({ where: { id } });
+
+  if (!user) {
+    throw new ApiError(400, 'User Not Found');
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: { role },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, updatedUser, 'success'));
 });
 
 export { getAllUsers, updateUserRole };
