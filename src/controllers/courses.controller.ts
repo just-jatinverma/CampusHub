@@ -23,18 +23,6 @@ const getCourses = asyncHandler(async (req, res) => {
 });
 
 const createCourse = asyncHandler(async (req: any, res) => {
-  // TODO: Validate request body
-  // - Validate required fields: name, description
-  // - Ensure proper format and length
-  // TODO: Get authenticated user info
-  // - Get user ID from request (set by verifyJWT middleware)
-  // - Verify admin role (handled by middleware)
-  // TODO: Create course
-  // - Use Prisma to create new course
-  // - Set createdById to authenticated user's ID
-  // TODO: Send response
-  // - Return success response with created course data
-
   const { id: createdById } = req.user;
 
   const { name, description } = req.body;
@@ -68,15 +56,6 @@ const getCourseMaterials = asyncHandler(async (req: any, res) => {
   const userId = req.user.id;
   const { courseId } = req.params;
 
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    select: { Material: { select: { title: true, fileUrl: true } } },
-  });
-
-  if (!course) {
-    throw new ApiError(400, 'course not found');
-  }
-
   const enrollment = await prisma.enrollment.findUnique({
     where: {
       studentId_courseId: {
@@ -90,29 +69,19 @@ const getCourseMaterials = asyncHandler(async (req: any, res) => {
     throw new ApiError(400, 'not enrolled in course');
   }
 
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { Material: { select: { title: true, fileUrl: true } } },
+  });
+
+  if (!course) {
+    throw new ApiError(400, 'course not found');
+  }
+
   return res.status(200).json(new ApiResponse(200, course.Material, 'success'));
 });
 
 const uploadCourseMaterial = asyncHandler(async (req: any, res) => {
-  // TODO: Validate request
-  // - Validate courseId from params
-  // - Validate file upload in request
-  // - Check file type and size restrictions
-  // TODO: Verify course
-  // - Check if course exists
-  // - Verify user is faculty for this course
-  // TODO: Handle file upload
-  // - Process file upload
-  // - Store file in appropriate storage
-  // TODO: Create material record
-  // - Create new material record in database
-  // - Include file metadata and course association
-  // - Set uploader to current user
-  // TODO: Create notification
-  // - Notify enrolled students about new material
-  // TODO: Send response
-  // - Return success response with material details
-
   const { courseId } = req.params;
   const { title } = req.body;
   if (!title || !title.trim()) {
@@ -155,7 +124,7 @@ const uploadCourseMaterial = asyncHandler(async (req: any, res) => {
   // Notify enrolled students about new material
   const enrollments = await prisma.enrollment.findMany({
     where: {
-      id: courseId,
+      courseId,
     },
     select: {
       studentId: true,
@@ -178,19 +147,6 @@ const uploadCourseMaterial = asyncHandler(async (req: any, res) => {
 });
 
 const markAttendance = asyncHandler(async (req: any, res) => {
-  // TODO: Validate request body
-  // - Validate required fields: studentId, status (PRESENT/ABSENT/LATE)
-  // - Validate courseId from params
-  // TODO: Verify course and enrollment
-  // - Check if course exists
-  // - Verify student is enrolled in the course
-  // TODO: Check for duplicate attendance
-  // - Ensure attendance hasn't already been marked for this date
-  // TODO: Create attendance record
-  // - Create new attendance record with Prisma
-  // - Include course, student, and marker (faculty) information
-  // TODO: Send response
-  // - Return success response with attendance record
   const userId = req.user.id;
   const { courseId } = req.params;
   const { studentId, status } = req.body;
@@ -253,39 +209,44 @@ const markAttendance = asyncHandler(async (req: any, res) => {
 });
 
 const getAttendance = asyncHandler(async (req, res) => {
-  // TODO: Validate course ID
-  // - Get courseId from params
-  // - Verify course exists
-  // TODO: Handle query parameters
-  // - Parse date range filters
-  // - Parse student filters if any
-  // - Parse pagination parameters
-  // TODO: Verify permissions
-  // - Ensure user is faculty or admin (handled by middleware)
-  // - If faculty, verify they are associated with the course
-  // TODO: Fetch attendance records
-  // - Query database for course attendance
-  // - Include student information
-  // - Apply date and student filters
-  // TODO: Calculate statistics
-  // - Calculate attendance percentages
-  // - Group by student if requested
-  // TODO: Send response
-  // - Return success response with attendance records
-  // - Include attendance statistics
-  // - Include pagination metadata
+  const { courseId } = req.params;
+
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+
+  if (!course) {
+    throw new ApiError(400, 'course not found');
+  }
+
+  const attendance = await prisma.attendance.findMany({
+    where: { courseId },
+    include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      markedBy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, attendance, 'success'));
 });
 
 const enrollInCourse = asyncHandler(async (req: any, res) => {
   const { courseId } = req.params;
 
-  // Validate course exists
   const course = await prisma.course.findUnique({ where: { id: courseId } });
   if (!course) {
     throw new ApiError(404, 'Course does not exist');
   }
 
-  // Get authenticated student
   const studentId = req.user.id;
 
   // Check existing enrollment
@@ -302,7 +263,6 @@ const enrollInCourse = asyncHandler(async (req: any, res) => {
     throw new ApiError(409, 'Already enrolled in this course');
   }
 
-  // Create enrollment
   const enroll = await prisma.enrollment.create({
     data: {
       studentId,
@@ -310,7 +270,6 @@ const enrollInCourse = asyncHandler(async (req: any, res) => {
     },
   });
 
-  // Notify the course creator (faculty)
   await prisma.notification.create({
     data: {
       userId: course.createdById,
@@ -323,24 +282,28 @@ const enrollInCourse = asyncHandler(async (req: any, res) => {
 });
 
 const getEnrollments = asyncHandler(async (req, res) => {
-  // TODO: Validate course ID
-  // - Get courseId from params
-  // - Verify course exists
-  // TODO: Handle query parameters
-  // - Parse pagination parameters
-  // - Parse status filters if any
-  // TODO: Verify permissions
-  // - Ensure user is faculty or admin (handled by middleware)
-  // - If faculty, verify they created the course
-  // TODO: Fetch enrollments
-  // - Query database for course enrollments
-  // - Include student information
-  // - Include enrollment date
-  // - Include attendance statistics
-  // TODO: Send response
-  // - Return success response with enrollments array
-  // - Include course summary data
-  // - Include pagination metadata
+  const { courseId } = req.params;
+
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+
+  if (!course) {
+    throw new ApiError(400, 'course not found');
+  }
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { courseId },
+    include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, enrollments, 'Enrollment successful'));
 });
 
 export {
