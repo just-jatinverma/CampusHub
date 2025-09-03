@@ -4,46 +4,31 @@ import { ApiResponse } from '../utils/apiResponse';
 import prisma from '../config/db';
 
 const getStudentAttendance = asyncHandler(async (req, res) => {
-  // TODO: Validate student ID
-  // - Get student ID from params
-  // - Verify student exists
-  // TODO: Handle query parameters
-  // - Parse courseId filter if provided
-  // - Parse date range filters if provided
-  // TODO: Verify access permission
-  // - Allow if user is admin/faculty
-  // - Allow if user is the student themselves
-  // - Throw error if unauthorized
-  // TODO: Fetch attendance records
-  // - Query database for student's attendance
-  // - Include course information
-  // - Apply course and date filters
-  // TODO: Calculate statistics
-  // - Calculate attendance percentage
-  // - Group by course if no specific course
-  // TODO: Send response
-  // - Return success response with attendance records
-  // - Include attendance statistics
+  const { studentId } = req.params;
+
+  const student = await prisma.user.findUnique({ where: { id: studentId } });
+
+  if (!student) {
+    throw new ApiError(400, 'student not found');
+  }
+
+  const attendance = await prisma.attendance.findMany({ where: { studentId } });
+
+  return res.status(200).json(new ApiResponse(200, attendance, 'success'));
 });
 
 const getStudentEnrollments = asyncHandler(async (req, res) => {
-  // TODO: Validate student ID
-  // - Get student ID from params
-  // - Verify student exists
-  // TODO: Handle query parameters
-  // - Parse status filters (active/completed)
-  // - Parse pagination parameters
-  // TODO: Verify access permission
-  // - Allow if user is admin/faculty
-  // - Allow if user is the student themselves
-  // - Throw error if unauthorized
-  // TODO: Fetch enrollments
-  // - Query database for student's enrollments
-  // - Include course information
-  // - Include relevant course statistics
-  // TODO: Send response
-  // - Return success response with enrollments array
-  // - Include pagination metadata
+  const { studentId } = req.params;
+
+  const student = await prisma.user.findUnique({ where: { id: studentId } });
+
+  if (!student) {
+    throw new ApiError(400, 'student not found');
+  }
+
+  const enrollments = await prisma.enrollment.findMany({ where: { studentId } });
+
+  return res.status(200).json(new ApiResponse(200, enrollments, 'success'));
 });
 
 export { getStudentAttendance, getStudentEnrollments };

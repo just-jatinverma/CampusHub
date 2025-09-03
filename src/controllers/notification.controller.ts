@@ -3,33 +3,31 @@ import { ApiError } from '../utils/apiError';
 import { ApiResponse } from '../utils/apiResponse';
 import prisma from '../config/db';
 
-const getUserNotifications = asyncHandler(async (req, res) => {
-  // TODO: Get authenticated user
-  // - Get user ID from request (set by verifyJWT middleware)
-  // TODO: Handle query parameters
-  // - Parse pagination parameters
-  // - Parse filter parameters (read/unread)
-  // TODO: Fetch notifications
-  // - Query database for user's notifications
-  // - Apply read/unread filter if specified
-  // - Sort by createdAt in descending order
-  // TODO: Send response
-  // - Return success response with notifications array
-  // - Include unread count in response
-  // - Include pagination metadata
+const getUserNotifications = asyncHandler(async (req: any, res) => {
+  const userId = req.user.id;
+
+  const notifications = await prisma.notification.findMany({ where: { userId, read: false } });
+
+  return res.status(200).json(new ApiResponse(200, notifications, 'success'));
 });
 
-const markNotificationAsRead = asyncHandler(async (req, res) => {
-  // TODO: Get authenticated user
-  // - Get user ID from request (set by verifyJWT middleware)
-  // TODO: Validate notification ID
-  // - Get notification ID from params
-  // - Verify notification exists
-  // - Verify notification belongs to user
-  // TODO: Update notification
-  // - Update notification read status to true
-  // TODO: Send response
-  // - Return success response with updated notification
+const markNotificationAsRead = asyncHandler(async (req: any, res) => {
+  const userId = req.user.id;
+
+  const { notificationId } = req.params;
+
+  const notification = await prisma.notification.findUnique({ where: { id: notificationId } });
+
+  if (!notification || notification.userId !== userId) {
+    throw new ApiError(400, 'notification not found');
+  }
+
+  const updated = await prisma.notification.update({
+    where: { id: notificationId },
+    data: { read: true },
+  });
+
+  return res.status(200).json(new ApiResponse(200, updated, 'success'));
 });
 
 export { getUserNotifications, markNotificationAsRead };
