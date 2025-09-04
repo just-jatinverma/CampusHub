@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.ts"
+    "predev": "prisma generate",
+    "dev": "nodemon src/index.ts",
+    "swagger-autogen": "ts-node src/swagger.ts",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^6.14.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -20,10 +22,12 @@
     "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "prisma": "^6.14.0"
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
+    "@prisma/client": "^6.15.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
@@ -33,9 +37,11 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.3.0",
+    "@types/swagger-ui-express": "^4.1.8",
     "eslint": "^9.34.0",
     "globals": "^16.3.0",
     "nodemon": "^3.1.10",
+    "prisma": "^6.15.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.40.0"
