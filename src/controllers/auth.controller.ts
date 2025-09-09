@@ -113,10 +113,6 @@ const getCurrentUser = asyncHandler(async (req: any, res) => {
 });
 
 const logoutUser = asyncHandler(async (req: any, res) => {
-  if (!req.user?._id) {
-    throw new ApiError(200, 'user not loggedIn');
-  }
-
   const userId = req.user._id;
 
   await prisma.user.update({
